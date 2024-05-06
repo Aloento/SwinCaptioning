@@ -21,7 +21,8 @@ class Model(nn.Module):
         self.attention = nn.TransformerDecoderLayer(
             d_model=embed_dim,
             nhead=num_heads,
-            dim_feedforward=embed_dim * forward_expansion
+            dim_feedforward=embed_dim * forward_expansion,
+            batch_first=True
         )
 
         self.decoder = nn.TransformerDecoder(self.attention, num_layers=num_decoder_layers)
@@ -31,12 +32,11 @@ class Model(nn.Module):
     def forward(self, images, captions):
         images = self.swin(images)  # (batch_size, embed_dim)
         images = self.relu(images)
-        images = images.unsqueeze(0)  # (seq_len 1, batch_size, embed_dim)
+        images = images.unsqueeze(1)  # (batch_size, seq_len 1, embed_dim)
 
         captions = self.embedding(captions)  # (batch_size, seq_len 20, embed_dim)
-        captions = captions.permute(1, 0, 2)  # (seq_len 20, batch_size, embed_dim)
 
-        cap_mask = torch.triu(torch.ones(captions.size(0), captions.size(0)), diagonal=1).bool()
+        cap_mask = torch.triu(torch.ones(captions.size(1), captions.size(1)), diagonal=1).bool()
         cap_mask = cap_mask.to(captions.device)
 
         output = self.decoder(
@@ -46,7 +46,6 @@ class Model(nn.Module):
         )
 
         output = self.output_layer(output)
-        output = output.permute(1, 0, 2)
         return output
 
 
