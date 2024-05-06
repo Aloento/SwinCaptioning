@@ -89,6 +89,7 @@ def validate_epoch(
             predicted = predicted[0]
 
             predicted = [idx_to_word[idx] for idx in predicted]
+            predicted = predicted[predicted.index('[STA]') + 1:predicted.index('[EOF]')]
             predicted = ' '.join(predicted)
             actual_text = captions[0]
 
@@ -112,12 +113,10 @@ def run():
     writer = SummaryWriter()
 
     start_epoch = load_checkpoint(model, optimizer, scheduler)
-    epochs = 5
+    epochs = 3
     loop = tqdm(range(start_epoch, epochs), desc='Epochs', leave=True)
 
     for epoch in loop:
-        val_loss = validate_epoch(model, idx_to_word, val_loader, criterion, writer, epoch)
-
         train_loss = train_epoch(model, train_loader, optimizer, criterion, scaler, writer, epoch)
         val_loss = validate_epoch(model, idx_to_word, val_loader, criterion, writer, epoch)
 

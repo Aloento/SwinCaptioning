@@ -59,7 +59,8 @@ def build_vocab(descriptions):
         tokens = caption.lower().split()
         counter.update(tokens)
 
-    words = [word for word, count in counter.items() if count >= 3]
+    words = [word for word, count in counter.items() if count >= 2]
+    # words = [word for word, count in counter.items()]
     words = ['[PAD]', '[STA]', '[EOF]', '[UNK]'] + sorted(words)
 
     word_to_idx = {word: idx for idx, word in enumerate(words)}
