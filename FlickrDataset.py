@@ -28,10 +28,11 @@ class FlickrDataset(Dataset):
         return len(self.descriptions)
 
     def __getitem__(self, idx):
-        img_path = os.path.join(self.images_dir, self.descriptions.iloc[idx]['image'])
         caption = self.descriptions.iloc[idx]['caption']
+        indices = self.descriptions.iloc[idx]['indices']
 
+        img_path = os.path.join(self.images_dir, self.descriptions.iloc[idx]['image'])
         image = Image.open(img_path).convert('RGB')
         image = self.transform(image)
 
-        return image, caption
+        return image, caption, indices

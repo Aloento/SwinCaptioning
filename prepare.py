@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 
 import pandas as pd
 import requests
@@ -48,15 +49,16 @@ def prepare_des():
 
 
 def build_vocab(descriptions):
-    vocab = set()
-    vocab.update(['<start>', '<end>', '<unk>'])
+    counter = Counter()
 
     for caption in descriptions['caption']:
-        vocab.update(caption.lower().split())
+        tokens = caption.lower().split()
+        counter.update(tokens)
 
-    l_vocab = sorted(list(vocab))
+    words = [word for word, count in counter.items() if count >= 3]
+    words = ['<start>', '<end>', '<unk>'] + sorted(words)
 
-    word_to_idx = {word: idx for idx, word in enumerate(l_vocab)}
+    word_to_idx = {word: idx for idx, word in enumerate(words)}
     return word_to_idx
 
 
@@ -68,7 +70,7 @@ def caption_to_indices(caption, word_to_index):
     return caption
 
 
-def prepare():
+def prepare() -> tuple[pd.DataFrame, dict[str, int]]:
     prepare_data()
     des = prepare_des()
     vocab = build_vocab(des)
