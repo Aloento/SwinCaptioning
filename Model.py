@@ -3,14 +3,18 @@ from torch import nn
 from torchvision import models
 
 
-class ImageCaptioningModel(nn.Module):
-    def __init__(self, num_heads, num_decoder_layers, forward_expansion, vocab_size: int):
-        super(ImageCaptioningModel, self).__init__()
+class Model(nn.Module):
+    def __init__(self, vocab_size: int):
+        super(Model, self).__init__()
+
         embed_dim = 256
+        num_heads = 8
+        num_decoder_layers = 6
+        forward_expansion = 4
 
         self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embed_dim)
 
-        self.swin = models.swin_v2_s(pretrained=True)
+        self.swin = models.swin_v2_s(weights=models.Swin_V2_S_Weights.DEFAULT)
         self.swin.head = nn.Linear(self.swin.head.in_features, embed_dim)
         self.relu = nn.LeakyReLU()
 
@@ -25,14 +29,12 @@ class ImageCaptioningModel(nn.Module):
         self.output_layer = nn.Linear(in_features=embed_dim, out_features=vocab_size)
 
     def forward(self, images, captions):
-        images = self.swin(images)
+        images = self.swin(images)  # (batch_size, embed_dim)
         images = self.relu(images)
+        images = images.unsqueeze(0)  # (seq_len 1, batch_size, embed_dim)
 
-        batch_size, feature_dim, h, w = images.size()
-        images = images.view(batch_size, feature_dim, h * w)
-        images = images.permute(2, 0, 1)
-
-        captions = self.embedding(captions)
+        captions = self.embedding(captions)  # (batch_size, seq_len 20, embed_dim)
+        captions = captions.permute(1, 0, 2)  # (seq_len 20, batch_size, embed_dim)
 
         cap_mask = torch.triu(torch.ones(captions.size(0), captions.size(0)), diagonal=1).bool()
         cap_mask = cap_mask.to(captions.device)
@@ -44,9 +46,16 @@ class ImageCaptioningModel(nn.Module):
         )
 
         output = self.output_layer(output)
+        output = output.permute(1, 0, 2)
         return output
 
 
 if __name__ == '__main__':
-    model = ImageCaptioningModel(8, 6, 4, 10000)
-    print(model)
+    model = Model(1000)
+    print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+
+    x = torch.rand((2, 3, 256, 256))
+    y = torch.randint(0, 1000, (2, 20))
+
+    out = model(x, y)
+    print(out.shape)

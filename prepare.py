@@ -60,7 +60,7 @@ def build_vocab(descriptions):
         counter.update(tokens)
 
     words = [word for word, count in counter.items() if count >= 3]
-    words = ['<start>', '<end>', '<unk>'] + sorted(words)
+    words = ['<pad>', '<start>', '<end>', '<unk>'] + sorted(words)
 
     word_to_idx = {word: idx for idx, word in enumerate(words)}
     return word_to_idx, words
@@ -70,6 +70,9 @@ def caption_to_indices(caption, word_to_index):
     caption = caption.lower().split()
     caption = ['<start>'] + caption + ['<end>']
     caption = [word_to_index.get(word, word_to_index['<unk>']) for word in caption]
+
+    caption = caption[:20]
+    caption = caption + [word_to_index['<pad>']] * (20 - len(caption))
 
     return caption
 
