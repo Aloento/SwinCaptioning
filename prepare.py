@@ -5,6 +5,10 @@ import pandas as pd
 import requests
 import zipfile
 
+from torch.utils.data import DataLoader
+
+from FlickrDataset import FlickrDataset
+
 
 def download_and_extract(url, download_path, extract_path):
     if os.path.exists(download_path):
@@ -59,7 +63,7 @@ def build_vocab(descriptions):
     words = ['<start>', '<end>', '<unk>'] + sorted(words)
 
     word_to_idx = {word: idx for idx, word in enumerate(words)}
-    return word_to_idx
+    return word_to_idx, words
 
 
 def caption_to_indices(caption, word_to_index):
@@ -70,14 +74,49 @@ def caption_to_indices(caption, word_to_index):
     return caption
 
 
-def prepare() -> tuple[pd.DataFrame, dict[str, int]]:
+def prepare_loader(des, vocab):
+    train_dataset = FlickrDataset(des, vocab, "train")
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=64,
+        shuffle=True,
+        num_workers=4,
+        drop_last=True,
+        pin_memory=True,
+        persistent_workers=True
+    )
+
+    val_dataset = FlickrDataset(des, vocab, "dev")
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=32,
+        shuffle=False,
+        num_workers=2,
+        pin_memory=True,
+        persistent_workers=True
+    )
+
+    test_dataset = FlickrDataset(des, vocab, "test")
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=1,
+        shuffle=False
+    )
+
+    return train_loader, val_loader, test_loader
+
+
+def prepare() -> tuple[list[str], DataLoader, DataLoader, DataLoader]:
     prepare_data()
+
     des = prepare_des()
-    vocab = build_vocab(des)
+    word_to_idx, idx_to_word = build_vocab(des)
 
-    des['indices'] = des['caption'].apply(lambda x: caption_to_indices(x, vocab))
+    des['indices'] = des['caption'].apply(lambda x: caption_to_indices(x, word_to_idx))
 
-    return des, vocab
+    train_loader, val_loader, test_loader = prepare_loader(des, word_to_idx)
+
+    return idx_to_word, train_loader, val_loader, test_loader
 
 
 if __name__ == '__main__':

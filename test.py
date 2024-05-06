@@ -1,10 +1,10 @@
-from FlickrDataset import FlickrDataset
+from tqdm import tqdm
+
 from prepare import prepare
 
 if __name__ == '__main__':
-    des, vocab = prepare()
-    print(len(des))
-    print(len(vocab))
+    idx_to_word, train_loader, val_loader, test_loader = prepare()
 
-    dataset = FlickrDataset(des, vocab, "dev")
-    print(len(dataset))
+    for i in tqdm(test_loader):
+        print(i)
+        break

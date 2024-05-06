@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from PIL import Image
 from pandas import DataFrame
+from torch import FloatTensor
 
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
@@ -27,7 +28,7 @@ class FlickrDataset(Dataset):
     def __len__(self):
         return len(self.descriptions)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> tuple[FloatTensor, str, list[int]]:
         caption = self.descriptions.iloc[idx]['caption']
         indices = self.descriptions.iloc[idx]['indices']
 
