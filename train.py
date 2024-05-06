@@ -6,6 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from Model import Model
+from persist import load_checkpoint
 from prepare import prepare
 
 
@@ -54,6 +55,7 @@ def train_epoch(
 
 def validate_epoch(
         model: Model,
+        idx_to_word: list[str],
         data_loader: DataLoader,
         criterion: nn.CrossEntropyLoss,
         writer: SummaryWriter,
@@ -81,6 +83,18 @@ def validate_epoch(
             current = epoch * len(data_loader) + batch_idx
             writer.add_scalar('Loss/val', loss.item(), current)
 
+            if batch_idx == 0:
+                _, predicted = torch.max(outputs, 2)
+                predicted = predicted.squeeze(0).cpu().numpy()
+                predicted = [idx_to_word[idx] for idx in predicted]
+                predicted = ' '.join(predicted)
+
+                actual_text = captions[0]
+
+                writer.add_text('Predicted', predicted, current)
+                writer.add_text('Actual', actual_text, current)
+                writer.add_image('Image', images[0], current)
+
     return running_loss / total
 
 
@@ -96,13 +110,21 @@ def run():
     scaler = GradScaler()
     writer = SummaryWriter()
 
-    loop = tqdm(range(10), desc='Epochs', leave=True)
+    start_epoch = load_checkpoint(model, optimizer, scheduler)
+    epochs = 100
+    loop = tqdm(range(start_epoch, epochs), desc='Epochs', leave=True)
 
     for epoch in loop:
         train_loss = train_epoch(model, train_loader, optimizer, criterion, scaler, writer, epoch)
-        val_loss = validate_epoch(model, val_loader, criterion, writer, epoch)
+        val_loss = validate_epoch(model, idx_to_word, val_loader, criterion, writer, epoch)
 
         scheduler.step(val_loss)
+        writer.add_scalar('Learning Rate', optimizer.param_groups[0]['lr'], epoch)
+
+        loop.set_postfix(train_loss=train_loss, val_loss=val_loss)
+        print(f"\nEpoch {epoch + 1}/{epochs} - Training Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+
+        torch.save(model.state_dict(), f'checkpoint_{epoch}.pt')
 
     writer.close()
 
