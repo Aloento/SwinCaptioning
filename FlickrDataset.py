@@ -21,7 +21,7 @@ class FlickrDataset(Dataset):
         self.descriptions = descriptions[descriptions['image'].isin(images['image'])]
 
         self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((256, 256)),
             transforms.ToTensor()
         ])
 
