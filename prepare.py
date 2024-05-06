@@ -81,7 +81,7 @@ def prepare_loader(des, vocab):
     train_dataset = FlickrDataset(des, vocab, "train")
     train_loader = DataLoader(
         train_dataset,
-        batch_size=64,
+        batch_size=70,
         shuffle=True,
         num_workers=4,
         drop_last=True,

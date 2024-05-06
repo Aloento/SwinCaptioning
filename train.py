@@ -83,17 +83,17 @@ def validate_epoch(
             current = epoch * len(data_loader) + batch_idx
             writer.add_scalar('Loss/val', loss.item(), current)
 
-            if batch_idx == 0:
-                _, predicted = torch.max(outputs, 2)
-                predicted = predicted.squeeze(0).cpu().numpy()
-                predicted = [idx_to_word[idx] for idx in predicted]
-                predicted = ' '.join(predicted)
+            predicted = torch.argmax(outputs, dim=2)
+            predicted = predicted.squeeze(0).cpu().numpy()
+            predicted = predicted[0]
 
-                actual_text = captions[0]
+            predicted = [idx_to_word[idx] for idx in predicted]
+            predicted = ' '.join(predicted)
+            actual_text = captions[0]
 
-                writer.add_text('Predicted', predicted, current)
-                writer.add_text('Actual', actual_text, current)
-                writer.add_image('Image', images[0], current)
+            writer.add_text('Predicted', predicted, current)
+            writer.add_text('Actual', actual_text, current)
+            writer.add_image('Image', images[0], current)
 
     return running_loss / total
 
@@ -111,7 +111,7 @@ def run():
     writer = SummaryWriter()
 
     start_epoch = load_checkpoint(model, optimizer, scheduler)
-    epochs = 100
+    epochs = 10
     loop = tqdm(range(start_epoch, epochs), desc='Epochs', leave=True)
 
     for epoch in loop:
