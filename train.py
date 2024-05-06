@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from Model import Model
-from persist import load_checkpoint
+from persist import load_checkpoint, save_checkpoint
 from prepare import prepare
 
 
@@ -72,7 +72,8 @@ def validate_epoch(
             images = images.to(device)
             indices = indices.to(device)
 
-            outputs = model(images, indices)
+            with autocast():
+                outputs = model(images, indices)
 
             loss = criterion(outputs.view(-1, outputs.size(2)), indices.view(-1))
 
@@ -91,9 +92,9 @@ def validate_epoch(
             predicted = ' '.join(predicted)
             actual_text = captions[0]
 
-            writer.add_text('Predicted', predicted, current)
-            writer.add_text('Actual', actual_text, current)
-            writer.add_image('Image', images[0], current)
+            if batch_idx % 10 == 0:
+                writer.add_text(f'Item {batch_idx}', f'Predicted: {predicted}\nActual: {actual_text}', current)
+                writer.add_image(f'Image {batch_idx}', images[0], current)
 
     return running_loss / total
 
@@ -111,10 +112,12 @@ def run():
     writer = SummaryWriter()
 
     start_epoch = load_checkpoint(model, optimizer, scheduler)
-    epochs = 10
+    epochs = 5
     loop = tqdm(range(start_epoch, epochs), desc='Epochs', leave=True)
 
     for epoch in loop:
+        val_loss = validate_epoch(model, idx_to_word, val_loader, criterion, writer, epoch)
+
         train_loss = train_epoch(model, train_loader, optimizer, criterion, scaler, writer, epoch)
         val_loss = validate_epoch(model, idx_to_word, val_loader, criterion, writer, epoch)
 
@@ -124,7 +127,7 @@ def run():
         loop.set_postfix(train_loss=train_loss, val_loss=val_loss)
         print(f"\nEpoch {epoch + 1}/{epochs} - Training Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
 
-        torch.save(model.state_dict(), f'checkpoint_{epoch}.pt')
+        save_checkpoint(model, optimizer, scheduler, epoch)
 
     writer.close()
 

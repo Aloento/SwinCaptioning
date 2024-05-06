@@ -60,7 +60,7 @@ def build_vocab(descriptions):
         counter.update(tokens)
 
     words = [word for word, count in counter.items() if count >= 3]
-    words = ['<pad>', '<start>', '<end>', '<unk>'] + sorted(words)
+    words = ['[PAD]', '[STA]', '[EOF]', '[UNK]'] + sorted(words)
 
     word_to_idx = {word: idx for idx, word in enumerate(words)}
     return word_to_idx, words
@@ -68,11 +68,11 @@ def build_vocab(descriptions):
 
 def caption_to_indices(caption, word_to_index):
     caption = caption.lower().split()
-    caption = ['<start>'] + caption + ['<end>']
-    caption = [word_to_index.get(word, word_to_index['<unk>']) for word in caption]
+    caption = ['[STA]'] + caption + ['[EOF]']
+    caption = [word_to_index.get(word, word_to_index['[UNK]']) for word in caption]
 
     caption = caption[:20]
-    caption = caption + [word_to_index['<pad>']] * (20 - len(caption))
+    caption = caption + [word_to_index['[PAD]']] * (20 - len(caption))
 
     return caption
 
@@ -92,7 +92,7 @@ def prepare_loader(des, vocab):
     val_dataset = FlickrDataset(des, vocab, "dev")
     val_loader = DataLoader(
         val_dataset,
-        batch_size=32,
+        batch_size=64,
         shuffle=False,
         num_workers=2,
         pin_memory=True,
