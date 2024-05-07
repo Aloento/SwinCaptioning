@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torchvision import models
 
+from Transformers import TransformerDecoder, TransformerDecoderLayer
+
 
 class Model(nn.Module):
     def __init__(self, vocab_size: int):
@@ -18,14 +20,14 @@ class Model(nn.Module):
         self.swin.head = nn.Linear(self.swin.head.in_features, embed_dim)
         self.relu = nn.LeakyReLU()
 
-        self.attention = nn.TransformerDecoderLayer(
+        self.attention = TransformerDecoderLayer(
             d_model=embed_dim,
             nhead=num_heads,
             dim_feedforward=embed_dim * forward_expansion,
             batch_first=True
         )
 
-        self.decoder = nn.TransformerDecoder(self.attention, num_layers=num_decoder_layers)
+        self.decoder = TransformerDecoder(self.attention, num_layers=num_decoder_layers)
 
         self.output_layer = nn.Linear(in_features=embed_dim, out_features=vocab_size)
 
@@ -39,14 +41,14 @@ class Model(nn.Module):
         cap_mask = torch.triu(torch.ones(captions.size(1), captions.size(1)), diagonal=1).bool()
         cap_mask = cap_mask.to(captions.device)
 
-        output = self.decoder(
+        output, weights = self.decoder(
             captions,
             images,
             tgt_mask=cap_mask
         )
 
         output = self.output_layer(output)
-        return output
+        return output, weights
 
 
 if __name__ == '__main__':
@@ -56,5 +58,7 @@ if __name__ == '__main__':
     x = torch.rand((2, 3, 256, 256))
     y = torch.randint(0, 1000, (2, 20))
 
-    out = model(x, y)
+    out, ws = model(x, y)
     print(out.shape)
+    print(len(ws))
+    print(ws[0].shape)

@@ -35,7 +35,7 @@ def train_epoch(
         optimizer.zero_grad()
 
         with autocast():
-            outputs = model(images, indices)
+            outputs, _ = model(images, indices)
 
         loss = criterion(outputs.view(-1, outputs.size(2)), indices.view(-1))
 
@@ -73,7 +73,7 @@ def validate_epoch(
             indices = indices.to(device)
 
             with autocast():
-                outputs = model(images, indices)
+                outputs, _ = model(images, indices)
 
             loss = criterion(outputs.view(-1, outputs.size(2)), indices.view(-1))
 
