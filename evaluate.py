@@ -1,47 +1,49 @@
 import torch
-from matplotlib import pyplot as plt
-from scipy.ndimage import zoom
-from torchvision.transforms.functional import to_pil_image
+from torcheval.metrics.functional import bleu_score
+from tqdm import tqdm
 
 from Model import Model
 from persist import load_checkpoint
 from prepare import prepare
 
-if __name__ == '__main__':
-    idx_to_word, _, _, test_loader = prepare()
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
+def evaluate():
+    idx_to_word, _, _, test_loader = prepare(True)
     model = Model(len(idx_to_word))
-    epoch = load_checkpoint(model)
-    model.eval()
+    model = model.to(device)
 
-    image, caption, indices = next(iter(test_loader))
+    epoch = load_checkpoint(model)
+    print(f"Model loaded from epoch {epoch}")
+
+    model.eval()
+    actual_sequences = []
+    predicted_sequences = []
 
     with torch.no_grad():
-        output, weight = model(image, indices)
+        for images, captions, indices in tqdm(test_loader, desc='Evaluating Model', leave=False):
+            images = images.to(device)
+            indices = indices.to(device)
 
-    predicted = torch.argmax(output, dim=2)
-    predicted = predicted.squeeze(0).numpy()
-    predicted = [idx_to_word[idx] for idx in predicted]
+            outputs, _ = model(images, indices)
 
-    weight = weight[0]
-    img_pil = to_pil_image(image[0])
+            # Decoding predictions to words
+            predicted_indices = torch.argmax(outputs, dim=2)
+            predicted_indices = predicted_indices.cpu().numpy()
 
-    fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(15, 12))
-    axes = axes.flatten()
+            for true_caption, pred_idx in zip(captions, predicted_indices):
+                pred_caption = [idx_to_word[index] for index in pred_idx]
+                pred_caption = pred_caption[:pred_caption.index('[EOF]')] if '[EOF]' in pred_caption else pred_caption
+                pred_caption = ' '.join(pred_caption)
 
-    for i, ax in enumerate(axes):
-        reshaped_weights = weight[i].reshape(16, 16).detach().numpy()
+                actual_sequences.append(true_caption.lower())
+                predicted_sequences.append(pred_caption)
 
-        min_weight = reshaped_weights.min()
-        max_weight = reshaped_weights.max()
-        normalized_weights = (reshaped_weights - min_weight) / (max_weight - min_weight)
-        normalized_weights = 1 - zoom(normalized_weights, 16, order=0)
+    bleu = bleu_score(predicted_sequences, actual_sequences)
+    print(f"BLEU Score: {bleu:.2f}")
+    return bleu
 
-        ax.imshow(img_pil)
-        ax.imshow(normalized_weights, cmap='gray', alpha=normalized_weights, vmin=0, vmax=1)
 
-        ax.set_title(predicted[i])
-        ax.axis('off')
-
-    plt.tight_layout()
-    plt.show()
+if __name__ == '__main__':
+    evaluate()

@@ -78,7 +78,7 @@ def caption_to_indices(caption, word_to_index):
     return caption
 
 
-def prepare_loader(des, vocab):
+def prepare_loader(des, vocab, eval=False):
     train_dataset = FlickrDataset(des, vocab, "train")
     train_loader = DataLoader(
         train_dataset,
@@ -93,7 +93,7 @@ def prepare_loader(des, vocab):
     val_dataset = FlickrDataset(des, vocab, "dev")
     val_loader = DataLoader(
         val_dataset,
-        batch_size=64,
+        batch_size=50,
         shuffle=False,
         num_workers=2,
         pin_memory=True,
@@ -103,14 +103,14 @@ def prepare_loader(des, vocab):
     test_dataset = FlickrDataset(des, vocab, "test")
     test_loader = DataLoader(
         test_dataset,
-        batch_size=1,
+        batch_size=100 if eval else 1,
         shuffle=True
     )
 
     return train_loader, val_loader, test_loader
 
 
-def prepare() -> tuple[list[str], DataLoader, DataLoader, DataLoader]:
+def prepare(eval=False) -> tuple[list[str], DataLoader, DataLoader, DataLoader]:
     prepare_data()
 
     des = prepare_des()
@@ -118,7 +118,7 @@ def prepare() -> tuple[list[str], DataLoader, DataLoader, DataLoader]:
 
     des['indices'] = des['caption'].apply(lambda x: caption_to_indices(x, word_to_idx))
 
-    train_loader, val_loader, test_loader = prepare_loader(des, word_to_idx)
+    train_loader, val_loader, test_loader = prepare_loader(des, word_to_idx, eval)
 
     return idx_to_word, train_loader, val_loader, test_loader
 
