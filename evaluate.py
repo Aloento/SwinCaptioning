@@ -40,9 +40,20 @@ def evaluate():
                 actual_sequences.append(true_caption.lower())
                 predicted_sequences.append(pred_caption)
 
-    bleu = bleu_score(predicted_sequences, actual_sequences)
-    print(f"BLEU Score: {bleu:.2f}")
-    return bleu
+    bleu1 = bleu_score(predicted_sequences, actual_sequences, n_gram=1)
+    print(f"BLEU1 Score: {bleu1:.2f}")
+
+    bleu2 = bleu_score(predicted_sequences, actual_sequences, n_gram=2)
+    print(f"BLEU2 Score: {bleu2:.2f}")
+
+    bleu3 = bleu_score(predicted_sequences, actual_sequences, n_gram=3)
+    print(f"BLEU3 Score: {bleu3:.2f}")
+
+    bleu4 = bleu_score(predicted_sequences, actual_sequences, n_gram=4)
+    print(f"BLEU4 Score: {bleu4:.2f}")
+
+    avg_bleu = (bleu1 + bleu2 + bleu3 + bleu4) / 4
+    print(f"Average BLEU Score: {avg_bleu:.2f}")
 
 
 if __name__ == '__main__':
