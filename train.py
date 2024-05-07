@@ -89,7 +89,8 @@ def validate_epoch(
             predicted = predicted[0]
 
             predicted = [idx_to_word[idx] for idx in predicted]
-            predicted = predicted[predicted.index('[STA]') + 1:predicted.index('[EOF]')]
+
+            predicted = predicted[:predicted.index('[EOF]')] if '[EOF]' in predicted else predicted
             predicted = ' '.join(predicted)
             actual_text = captions[0]
 

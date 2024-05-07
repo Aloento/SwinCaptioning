@@ -14,7 +14,7 @@ class Model(nn.Module):
 
         self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embed_dim)
 
-        self.swin = models.swin_v2_s(weights=models.Swin_V2_S_Weights.DEFAULT)
+        self.swin = models.swin_v2_t(weights=models.Swin_V2_T_Weights.DEFAULT)
         self.swin.head = nn.Linear(self.swin.head.in_features, embed_dim)
         self.relu = nn.LeakyReLU()
 

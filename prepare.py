@@ -61,7 +61,7 @@ def build_vocab(descriptions):
 
     words = [word for word, count in counter.items() if count >= 2]
     # words = [word for word, count in counter.items()]
-    words = ['[PAD]', '[STA]', '[EOF]', '[UNK]'] + sorted(words)
+    words = ['[PAD]', '[EOF]', '[UNK]'] + sorted(words)
 
     word_to_idx = {word: idx for idx, word in enumerate(words)}
     return word_to_idx, words
@@ -69,7 +69,7 @@ def build_vocab(descriptions):
 
 def caption_to_indices(caption, word_to_index):
     caption = caption.lower().split()
-    caption = ['[STA]'] + caption + ['[EOF]']
+    caption = caption + ['[EOF]']
     caption = [word_to_index.get(word, word_to_index['[UNK]']) for word in caption]
 
     caption = caption[:20]
@@ -82,7 +82,7 @@ def prepare_loader(des, vocab):
     train_dataset = FlickrDataset(des, vocab, "train")
     train_loader = DataLoader(
         train_dataset,
-        batch_size=70,
+        batch_size=100,
         shuffle=True,
         num_workers=4,
         drop_last=True,
