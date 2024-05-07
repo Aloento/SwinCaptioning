@@ -102,7 +102,7 @@ def validate_epoch(
 
 
 def run():
-    idx_to_word, train_loader, val_loader, test_loader = prepare()
+    idx_to_word, train_loader, val_loader, _ = prepare()
 
     model = Model(len(idx_to_word)).to(device)
 

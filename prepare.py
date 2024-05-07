@@ -104,7 +104,7 @@ def prepare_loader(des, vocab):
     test_loader = DataLoader(
         test_dataset,
         batch_size=1,
-        shuffle=False
+        shuffle=True
     )
 
     return train_loader, val_loader, test_loader

@@ -1,5 +1,6 @@
 from typing import Optional
 
+import torch
 from torch import nn, Tensor
 
 
@@ -16,32 +17,17 @@ class TransformerDecoderLayer(nn.TransformerDecoderLayer):
         x = tgt
 
         if self.norm_first:
-            sa_attn_output, sa_attn_output_weights = self._sa_block(self.norm1(x), tgt_mask, tgt_key_padding_mask)
+            sa_attn_output = self._sa_block(self.norm1(x), tgt_mask, tgt_key_padding_mask)
             x = x + sa_attn_output
             x = x + self._mha_block(self.norm2(x), memory, memory_mask, memory_key_padding_mask)
             x = x + self._ff_block(self.norm3(x))
         else:
-            sa_attn_output, sa_attn_output_weights = self._sa_block(x, tgt_mask, tgt_key_padding_mask)
+            sa_attn_output = self._sa_block(x, tgt_mask, tgt_key_padding_mask)
             x = self.norm1(x + sa_attn_output)
             x = self.norm2(x + self._mha_block(x, memory, memory_mask, memory_key_padding_mask))
             x = self.norm3(x + self._ff_block(x))
 
-        return x, sa_attn_output_weights
-
-    def _sa_block(
-            self,
-            x: Tensor,
-            attn_mask: Optional[Tensor],
-            key_padding_mask: Optional[Tensor]
-    ) -> tuple[Tensor, Tensor]:
-        attn_output, attn_output_weights = self.self_attn(
-            x, x, x,
-            attn_mask=attn_mask,
-            key_padding_mask=key_padding_mask,
-            need_weights=True)
-
-        attn_output = self.dropout1(attn_output)
-        return attn_output, attn_output_weights
+        return x, sa_attn_output
 
 
 class TransformerDecoder(nn.TransformerDecoder):
@@ -53,7 +39,7 @@ class TransformerDecoder(nn.TransformerDecoder):
             memory_mask: Optional[Tensor] = None,
             tgt_key_padding_mask: Optional[Tensor] = None,
             memory_key_padding_mask: Optional[Tensor] = None
-    ) -> tuple[Tensor, list[Tensor]]:
+    ) -> tuple[Tensor, Tensor]:
         output = tgt
         weights = []
 
@@ -66,4 +52,7 @@ class TransformerDecoder(nn.TransformerDecoder):
             )
             weights.append(layer_weights)
 
-        return output, weights
+        weight = torch.stack(weights)
+        weight = torch.mean(weight, dim=0)
+        
+        return output, weight

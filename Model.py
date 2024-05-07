@@ -41,14 +41,14 @@ class Model(nn.Module):
         cap_mask = torch.triu(torch.ones(captions.size(1), captions.size(1)), diagonal=1).bool()
         cap_mask = cap_mask.to(captions.device)
 
-        output, weights = self.decoder(
+        output, weight = self.decoder(
             captions,
             images,
             tgt_mask=cap_mask
         )
 
         output = self.output_layer(output)
-        return output, weights
+        return output, weight
 
 
 if __name__ == '__main__':
@@ -60,5 +60,4 @@ if __name__ == '__main__':
 
     out, ws = model(x, y)
     print(out.shape)
-    print(len(ws))
-    print(ws[0].shape)
+    print(ws.shape)
