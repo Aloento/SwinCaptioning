@@ -39,3 +39,20 @@ class FlickrDataset(Dataset):
 
         indices = torch.tensor(indices).long()
         return image, caption, indices
+
+
+if __name__ == '__main__':
+    dev_list = pd.read_csv(os.path.join('Flickr8k', 'Flickr_8k.devImages.txt'), header=None, names=['image'])
+    test_list = pd.read_csv(os.path.join('Flickr8k', 'Flickr_8k.testImages.txt'), header=None, names=['image'])
+    train_list = pd.read_csv(os.path.join('Flickr8k', 'Flickr_8k.trainImages.txt'), header=None, names=['image'])
+
+    dev_set = set(dev_list['image'])
+    test_set = set(test_list['image'])
+    train_set = set(train_list['image'])
+
+    # 0
+    print(len(dev_set & test_set))
+    print(len(dev_set & train_set))
+    print(len(test_set & train_set))
+    print(len(dev_set & test_set & train_set))
+    print(len(dev_set | test_set | train_set))
